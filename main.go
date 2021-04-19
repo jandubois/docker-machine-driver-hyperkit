@@ -1,5 +1,3 @@
-// +build darwin,!arm64
-
 /*
 Copyright 2016 The Kubernetes Authors All rights reserved.
 
@@ -19,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
@@ -31,6 +31,12 @@ func main() {
 	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
 		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
 		return
+	}
+
+	// Drop root privileges before running commands via cobra
+	if err := syscall.Setuid(syscall.Getuid()); err != nil {
+		fmt.Fprintf(os.Stderr, "cannot drop privileges: %v", err)
+		os.Exit(1)
 	}
 
 	cmd.Execute()
