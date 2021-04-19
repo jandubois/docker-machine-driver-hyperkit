@@ -17,6 +17,7 @@ require (
 	github.com/moby/hyperkit v0.0.0-20210108224842-2f061e447e14
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.7.0 // indirect
+	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/zchee/go-vmnet v0.0.0-20161021174912-97ebf9174097
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0 // indirect

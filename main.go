@@ -19,19 +19,19 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
+	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
+	"github.com/jandubois/docker-machine-driver-hyperkit/cmd"
 	"github.com/jandubois/docker-machine-driver-hyperkit/pkg/hyperkit"
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "version" {
-		fmt.Println("version:", hyperkit.GetVersion())
-		fmt.Println("commit:", hyperkit.GetGitCommitID())
+	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
+		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
 		return
 	}
 
-	plugin.RegisterDriver(hyperkit.NewDriver("", ""))
+	cmd.Execute()
 }
