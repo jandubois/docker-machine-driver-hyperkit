@@ -529,6 +529,8 @@ func (d *Driver) setupNFSShare() error {
 	}
 
 	mountCommands := "#/bin/bash\\n"
+	// TODO(jandubois) nfs-client utils are not running by default on TinyCoreLinux (boot2docker)
+	mountCommands += "[ -f /usr/local/etc/init.d/nfs-client ] && sudo /usr/local/etc/init.d/nfs-client start\\n"
 	log.Info(d.IPAddress)
 
 	for _, share := range d.NFSShares {
@@ -547,7 +549,7 @@ func (d *Driver) setupNFSShare() error {
 
 		root := d.NFSSharesRoot
 		mountCommands += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
-		mountCommands += fmt.Sprintf("sudo mount -t nfs -o noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
 	}
 
 	if err := nfsexports.ReloadDaemon(); err != nil {
