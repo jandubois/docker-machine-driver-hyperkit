@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	isoURL     string
-	cpuCount   int
-	memorySize int
-	diskSize   int
+	isoURL       string
+	cpuCount     int
+	memorySize   int
+	diskSize     int
+	mountRoot    string
+	volumeMounts []string
 
 	startCmd = &cobra.Command{
 		Use:   "start",
@@ -31,6 +33,8 @@ func init() {
 	startCmd.Flags().IntVar(&cpuCount, "cpus", 2, "Number of cpus")
 	startCmd.Flags().IntVar(&memorySize, "memory", 4096, "Memory size in MB")
 	startCmd.Flags().IntVar(&diskSize, "disk-size", 40000, "Disk size in MB")
+	startCmd.Flags().StringVar(&mountRoot, "mount-root", "/nfsshares", "NFS mount root")
+	startCmd.Flags().StringArrayVar(&volumeMounts, "volume", []string{}, "Paths to mount via NFS")
 }
 
 func startCommand(cmd *cobra.Command, args []string) error {
@@ -64,5 +68,7 @@ func newDriver(machineName, storePath string) (interface{}, error) {
 		DiskSize:       diskSize,
 		Memory:         memorySize,
 		CPU:            cpuCount,
+		NFSSharesRoot:  mountRoot,
+		NFSShares:      volumeMounts,
 	}, nil
 }
