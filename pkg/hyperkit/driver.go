@@ -21,7 +21,6 @@ package hyperkit
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/docker/machine/libmachine/mcnflag"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -34,6 +33,7 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers"
 	"github.com/docker/machine/libmachine/log"
+	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/google/uuid"
 	pkgdrivers "github.com/jandubois/docker-machine-driver-hyperkit/pkg/drivers"
@@ -61,8 +61,8 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	*pkgdrivers.CommonDriver
-	BootInitrd 	   string
-	BootKernel 	   string
+	BootInitrd     string
+	BootKernel     string
 	Boot2DockerURL string
 	DiskSize       int
 	CPU            int
@@ -80,7 +80,7 @@ func NewDriver(machineName, storePath string) *Driver {
 	return &Driver{
 		// Don't init BaseDriver values here. They are overwritten by API .SetConfigRaw() call.
 		CommonDriver: &pkgdrivers.CommonDriver{},
-		DiskSize: defaultDiskSize,
+		DiskSize:     defaultDiskSize,
 	}
 }
 
@@ -270,7 +270,7 @@ func (d *Driver) createHost() (*hyperkit.HyperKit, error) {
 	}
 	h.UUID = d.UUID
 	if h.UUID == "" {
-		h.UUID = uuid.NewSHA1( uuid.Nil, []byte(stateDir)).String()
+		h.UUID = uuid.NewSHA1(uuid.Nil, []byte(stateDir)).String()
 	}
 
 	if vsockPorts, err := d.extractVSockPorts(); err != nil {
@@ -477,7 +477,7 @@ func (d *Driver) extractKernel(isoPath string) error {
 		return err
 	}
 
-	if files.KernelPath == ""  {
+	if files.KernelPath == "" {
 		return errors.Wrapf(err, "failed to extract kernel boot image from iso")
 	}
 	d.BootKernel = files.KernelPath
