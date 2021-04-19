@@ -535,6 +535,8 @@ func (d *Driver) setupNFSShare() error {
 	log.Info(d.IPAddress)
 
 	for _, share := range d.NFSShares {
+		sharePaths := strings.Split(share, ":")
+		share = sharePaths[0]
 		if !path.IsAbs(share) {
 			share = d.ResolveStorePath(share)
 		}
@@ -548,9 +550,15 @@ func (d *Driver) setupNFSShare() error {
 			return err
 		}
 
-		root := d.NFSSharesRoot
-		mountCommands += fmt.Sprintf("sudo mkdir -p %s/%s\\n", root, share)
-		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
+		var mountPoint string
+		if len(sharePaths) < 2 {
+			mountPoint = filepath.Join(d.NFSSharesRoot, share)
+		} else {
+			// TODO(jandubois) Should we validate that the mountpoint is an absolute path?
+			mountPoint = sharePaths[1]
+		}
+		mountCommands += fmt.Sprintf("sudo mkdir -p %s\\n", mountPoint)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s\\n", hostIP, share, mountPoint)
 	}
 
 	if err := reloadNFSDaemon(); err != nil {
@@ -567,7 +575,7 @@ func (d *Driver) setupNFSShare() error {
 }
 
 func (d *Driver) nfsExportIdentifier(path string) string {
-	return fmt.Sprintf("minikube-hyperkit %s-%s", d.MachineName, path)
+	return fmt.Sprintf("docker-machine-driver-hyperkit %s-%s", d.MachineName, path)
 }
 
 func (d *Driver) sendSignal(s os.Signal) error {
