@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -552,7 +553,7 @@ func (d *Driver) setupNFSShare() error {
 		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s/%s\\n", hostIP, share, root, share)
 	}
 
-	if err := nfsexports.ReloadDaemon(); err != nil {
+	if err := reloadNFSDaemon(); err != nil {
 		return err
 	}
 
@@ -603,15 +604,26 @@ func (d *Driver) getPid() int {
 
 func (d *Driver) cleanupNfsExports() {
 	if len(d.NFSShares) > 0 {
-		log.Infof("You must be root to remove NFS shared folders. Please type root password.")
 		for _, share := range d.NFSShares {
 			if _, err := nfsexports.Remove("", d.nfsExportIdentifier(share)); err != nil {
 				log.Errorf("failed removing nfs share (%s): %v", share, err)
 			}
 		}
 
-		if err := nfsexports.ReloadDaemon(); err != nil {
+		if err := reloadNFSDaemon(); err != nil {
 			log.Errorf("failed to reload the nfs daemon: %v", err)
 		}
 	}
+}
+
+// nfsexports.ReloadDaemon uses `sudo` which will prompt for a password; we are already running as root
+func reloadNFSDaemon() error {
+	uid := syscall.Getuid()
+	syscall.Setuid(0)
+	out, err := exec.Command("/sbin/nfsd", "update").Output()
+	syscall.Setreuid(uid, 0)
+	if err != nil {
+		return fmt.Errorf("Reloading nfsd failed: %s\n%s", err.Error(), out)
+	}
+	return nil
 }
