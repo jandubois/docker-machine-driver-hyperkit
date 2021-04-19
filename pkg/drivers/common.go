@@ -24,13 +24,11 @@ import (
 	"syscall"
 
 	"github.com/docker/machine/libmachine/drivers"
+	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/mcnutils"
 	"github.com/docker/machine/libmachine/ssh"
 	"github.com/pkg/errors"
-
-	"k8s.io/klog/v2"
-	"k8s.io/minikube/pkg/util"
 )
 
 // This file is for common code shared among internal machine drivers
@@ -76,7 +74,7 @@ func createRawDiskImage(sshKeyPath, diskPath string, diskSizeMb int) error {
 		return errors.Wrapf(err, "closing file %s", diskPath)
 	}
 
-	if err := os.Truncate(diskPath, util.ConvertMBToBytes(diskSizeMb)); err != nil {
+	if err := os.Truncate(diskPath, int64(diskSizeMb)*1024*1024); err != nil {
 		return errors.Wrap(err, "truncate")
 	}
 	return nil
@@ -98,20 +96,20 @@ func Restart(d drivers.Driver) error {
 
 // MakeDiskImage makes a boot2docker VM disk image.
 func MakeDiskImage(d *drivers.BaseDriver, boot2dockerURL string, diskSize int) error {
-	klog.Infof("Making disk image using store path: %s", d.StorePath)
+	log.Infof("Making disk image using store path: %s", d.StorePath)
 	b2 := mcnutils.NewB2dUtils(d.StorePath)
 	if err := b2.CopyIsoToMachineDir(boot2dockerURL, d.MachineName); err != nil {
 		return errors.Wrap(err, "copy iso to machine dir")
 	}
 
 	keyPath := d.GetSSHKeyPath()
-	klog.Infof("Creating ssh key: %s...", keyPath)
+	log.Infof("Creating ssh key: %s...", keyPath)
 	if err := ssh.GenerateSSHKey(keyPath); err != nil {
 		return errors.Wrap(err, "generate ssh key")
 	}
 
 	diskPath := GetDiskPath(d)
-	klog.Infof("Creating raw disk image: %s...", diskPath)
+	log.Infof("Creating raw disk image: %s...", diskPath)
 	if _, err := os.Stat(diskPath); os.IsNotExist(err) {
 		if err := createRawDiskImage(publicSSHKeyPath(d), diskPath, diskSize); err != nil {
 			return errors.Wrapf(err, "createRawDiskImage(%s)", diskPath)
@@ -125,7 +123,7 @@ func MakeDiskImage(d *drivers.BaseDriver, boot2dockerURL string, diskSize int) e
 }
 
 func fixMachinePermissions(path string) error {
-	klog.Infof("Fixing permissions on %s ...", path)
+	log.Infof("Fixing permissions on %s ...", path)
 	if err := os.Chown(path, syscall.Getuid(), syscall.Getegid()); err != nil {
 		return errors.Wrap(err, "chown dir")
 	}

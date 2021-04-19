@@ -21,13 +21,19 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"k8s.io/minikube/pkg/minikube/tests"
 )
 
 func Test_createDiskImage(t *testing.T) {
-	tmpdir := tests.MakeTempDir()
-	defer tests.RemoveTempDir(tmpdir)
+	tmpdir, err := ioutil.TempDir(os.TempDir(), "")
+	if nil != err {
+		return
+	}
+	defer func() { //clean up tempdir
+		err := os.RemoveAll(tmpdir)
+		if err != nil {
+			t.Errorf("failed to clean up temp folder  %q", tmpdir)
+		}
+	}()
 
 	sshPath := filepath.Join(tmpdir, "ssh")
 	if err := ioutil.WriteFile(sshPath, []byte("mysshkey"), 0644); err != nil {

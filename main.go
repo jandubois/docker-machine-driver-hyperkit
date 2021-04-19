@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
-	"k8s.io/minikube/pkg/drivers/hyperkit"
+	"github.com/jandubois/docker-machine-driver-hyperkit/pkg/hyperkit"
 )
 
 func main() {

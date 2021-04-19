@@ -36,11 +36,11 @@ import (
 	"github.com/docker/machine/libmachine/log"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/google/uuid"
+	pkgdrivers "github.com/jandubois/docker-machine-driver-hyperkit/pkg/drivers"
 	"github.com/johanneswuerbach/nfsexports"
 	ps "github.com/mitchellh/go-ps"
 	hyperkit "github.com/moby/hyperkit/go"
 	"github.com/pkg/errors"
-	pkgdrivers "k8s.io/minikube/pkg/drivers"
 )
 
 const (
