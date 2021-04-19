@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/docker/machine/libmachine/log"
-	"github.com/jandubois/docker-machine-driver-hyperkit/pkg/hyperkit"
+	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
 	"github.com/spf13/cobra"
 )
 

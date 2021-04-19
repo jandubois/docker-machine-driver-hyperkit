@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jandubois/docker-machine-driver-hyperkit/pkg/hyperkit"
+	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
 	"github.com/spf13/cobra"
 )
 

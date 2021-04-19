@@ -37,11 +37,11 @@ import (
 	"github.com/docker/machine/libmachine/mcnflag"
 	"github.com/docker/machine/libmachine/state"
 	"github.com/google/uuid"
-	pkgdrivers "github.com/jandubois/docker-machine-driver-hyperkit/pkg/drivers"
 	"github.com/johanneswuerbach/nfsexports"
 	ps "github.com/mitchellh/go-ps"
 	hyperkit "github.com/moby/hyperkit/go"
 	"github.com/pkg/errors"
+	pkgdrivers "github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/drivers"
 )
 
 const (

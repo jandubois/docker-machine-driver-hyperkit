@@ -24,8 +24,8 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
-	"github.com/jandubois/docker-machine-driver-hyperkit/cmd"
-	"github.com/jandubois/docker-machine-driver-hyperkit/pkg/hyperkit"
+	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/cmd"
+	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
 )
 
 func main() {
