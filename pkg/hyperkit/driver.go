@@ -270,7 +270,7 @@ func (d *Driver) createHost() (*hyperkit.HyperKit, error) {
 	}
 	h.UUID = d.UUID
 	if h.UUID == "" {
-		h.UUID = uuid.NewSHA1( uuid.Nil, []byte(d.GetMachineName())).String()
+		h.UUID = uuid.NewSHA1( uuid.Nil, []byte(stateDir)).String()
 	}
 
 	if vsockPorts, err := d.extractVSockPorts(); err != nil {
