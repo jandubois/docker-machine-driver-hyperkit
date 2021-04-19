@@ -250,7 +250,7 @@ func (d *Driver) Restart() error {
 }
 
 func (d *Driver) createHost() (*hyperkit.HyperKit, error) {
-	stateDir := filepath.Join(d.StorePath, "machines", d.MachineName)
+	stateDir := d.ResolveStorePath("")
 	h, err := hyperkit.New("", d.VpnKitSock, stateDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "new-ing Hyperkit")
@@ -406,8 +406,7 @@ func (t tempError) Error() string {
 //an instance running already. If the PID in the pidfile does not belong to a running hyperkit
 //process, we can safely delete it, and there is a good chance the machine will recover when restarted.
 func (d *Driver) recoverFromUncleanShutdown() error {
-	stateDir := filepath.Join(d.StorePath, "machines", d.MachineName)
-	pidFile := filepath.Join(stateDir, pidFileName)
+	pidFile := d.ResolveStorePath(pidFileName)
 
 	if _, err := os.Stat(pidFile); err != nil {
 		if os.IsNotExist(err) {
