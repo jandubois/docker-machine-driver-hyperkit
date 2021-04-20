@@ -27,5 +27,8 @@ func deleteCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Powering down machine now...")
-	return host.Stop()
+	if err = host.Stop(); err != nil {
+		return err
+	}
+	return api.Remove(machineName)
 }
