@@ -50,6 +50,12 @@ func startCommand(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	// TODO(jandubois) AuthOptions.StorePath should be unused, but provision.ConfigureAuth
+	// TODO copies the client certs into this directory? Not sure if they are used for
+	// TODO anything, as it looks like a race condition when multiple machines are provisioned.
+	// https://github.com/docker/machine/pull/2730 does not inspire confidence in that code...
+	host.HostOptions.AuthOptions.StorePath = storagePath
+
 	return api.Create(host)
 }
 
