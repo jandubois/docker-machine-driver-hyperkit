@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"path"
+	"strings"
 
 	"github.com/docker/machine/libmachine"
 	"github.com/docker/machine/libmachine/drivers"
@@ -17,6 +19,7 @@ var (
 	diskSize     int
 	mountRoot    string
 	volumeMounts []string
+	cmdline      string
 
 	startCmd = &cobra.Command{
 		Use:   "start",
@@ -24,6 +27,12 @@ var (
 		Long:  `Create and start a new VM.`,
 		RunE:  startCommand,
 	}
+
+	// TODO(jandubois) these boot options are a subset of what minikube uses right now
+	// TODO audit the settings and document why each one is being used!
+	// The "noembed" option is required on boot2docker.iso (TinyCoreLinux) to make sure
+	// the system doesn't run out of a ramdisk; otherwise pivot_root will fail.
+	defaultCmdline = "loglevel=3 console=ttyS0 console=tty0 noembed nomodeset norestore random.trust_cpu=on hw_rng_model=virtio base"
 )
 
 func init() {
@@ -35,6 +44,7 @@ func init() {
 	startCmd.Flags().IntVar(&diskSize, "disk-size", 40000, "Disk size in MB")
 	startCmd.Flags().StringVar(&mountRoot, "mount-root", "/nfsshares", "NFS mount root")
 	startCmd.Flags().StringArrayVar(&volumeMounts, "volume", []string{}, "Paths to mount via NFS")
+	startCmd.Flags().StringVar(&cmdline, "boot-options", defaultCmdline, "Boot commandline options")
 }
 
 func startCommand(cmd *cobra.Command, args []string) error {
@@ -64,7 +74,7 @@ func newAPI() *libmachine.Client {
 }
 
 func newDriver(machineName, storePath string) (interface{}, error) {
-	return &hyperkit.Driver{
+	driver := hyperkit.Driver{
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: machineName,
 			StorePath:   storePath,
@@ -76,5 +86,12 @@ func newDriver(machineName, storePath string) (interface{}, error) {
 		CPU:            cpuCount,
 		NFSSharesRoot:  mountRoot,
 		NFSShares:      volumeMounts,
-	}, nil
+		Cmdline:        cmdline,
+	}
+
+	// If the user-provided cmdline starts with a "+" then it is supposed to be appended to the defaultCmdline.
+	if strings.HasPrefix(cmdline, "+") {
+		driver.Cmdline = fmt.Sprintf("%s %s", defaultCmdline, cmdline[1:])
+	}
+	return &driver, nil
 }
