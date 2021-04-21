@@ -536,12 +536,18 @@ func (d *Driver) setupNFSShare() error {
 
 	for _, share := range d.NFSShares {
 		sharePaths := strings.Split(share, ":")
-		share = sharePaths[0]
-		if !path.IsAbs(share) {
-			share = d.ResolveStorePath(share)
+		localPath := sharePaths[0]
+		if !path.IsAbs(localPath) {
+			localPath = d.ResolveStorePath(localPath)
 		}
-		nfsConfig := fmt.Sprintf("%s %s -alldirs -mapall=%s", share, d.IPAddress, user.Username)
+		localPath, err := filepath.EvalSymlinks(localPath)
+		if err != nil {
+			log.Errorf("cannot evaluate symlinks in share path '%s': %v", sharePaths[0], err)
+			return err
+		}
+		nfsConfig := fmt.Sprintf("%s %s -alldirs -mapall=%s", localPath, d.IPAddress, user.Username)
 
+		// nfsExportIdentifier() is called with `share` and not `localPath` to keep the exports cleanup code simple
 		if _, err := nfsexports.Add("", d.nfsExportIdentifier(share), nfsConfig); err != nil {
 			if strings.Contains(err.Error(), "conflicts with existing export") {
 				log.Info("Conflicting NFS Share not setup and ignored:", err)
@@ -552,13 +558,13 @@ func (d *Driver) setupNFSShare() error {
 
 		var mountPoint string
 		if len(sharePaths) < 2 {
-			mountPoint = filepath.Join(d.NFSSharesRoot, share)
+			mountPoint = filepath.Join(d.NFSSharesRoot, localPath)
 		} else {
 			// TODO(jandubois) Should we validate that the mountpoint is an absolute path?
 			mountPoint = sharePaths[1]
 		}
 		mountCommands += fmt.Sprintf("sudo mkdir -p %s\\n", mountPoint)
-		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s\\n", hostIP, share, mountPoint)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s\\n", hostIP, localPath, mountPoint)
 	}
 
 	if err := reloadNFSDaemon(); err != nil {
