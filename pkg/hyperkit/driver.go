@@ -62,19 +62,19 @@ const (
 type Driver struct {
 	*drivers.BaseDriver
 	*pkgdrivers.CommonDriver
+	Boot2DockerURL string
 	BootInitrd     string
 	BootKernel     string
-	Boot2DockerURL string
-	DiskSize       int
 	CPU            int
+	Cmdline        string
+	DiskSize       int
 	Hyperkit       string
 	Memory         int
-	Cmdline        string
 	NFSShares      []string
 	NFSSharesRoot  string
 	UUID           string
-	VpnKitSock     string
 	VSockPorts     []string
+	VpnKitSock     string
 }
 
 // NewDriver creates a new driver for a host

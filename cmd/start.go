@@ -13,14 +13,14 @@ import (
 )
 
 var (
-	isoURL       string
+	cmdline      string
 	cpuCount     int
-	memorySize   int
 	diskSize     int
+	hyperkitPath string
+	isoURL       string
+	memorySize   int
 	mountRoot    string
 	volumeMounts []string
-	cmdline      string
-	hyperkitPath string
 
 	startCmd = &cobra.Command{
 		Use:   "start",
@@ -39,14 +39,14 @@ var (
 func init() {
 	rootCmd.AddCommand(startCmd)
 
-	startCmd.Flags().StringVar(&isoURL, "iso-url", "", "URL of the boot2docker.iso")
+	startCmd.Flags().StringVar(&cmdline, "boot-options", defaultCmdline, "Boot commandline options")
 	startCmd.Flags().IntVar(&cpuCount, "cpus", 2, "Number of cpus")
-	startCmd.Flags().IntVar(&memorySize, "memory", 4096, "Memory size in MB")
 	startCmd.Flags().IntVar(&diskSize, "disk-size", 40000, "Disk size in MB")
+	startCmd.Flags().StringVar(&hyperkitPath, "hyperkit", "", "Path to hyperkit executable")
+	startCmd.Flags().StringVar(&isoURL, "iso-url", "", "URL of the boot2docker.iso")
+	startCmd.Flags().IntVar(&memorySize, "memory", 4096, "Memory size in MB")
 	startCmd.Flags().StringVar(&mountRoot, "mount-root", "/nfsshares", "NFS mount root")
 	startCmd.Flags().StringArrayVar(&volumeMounts, "volume", []string{}, "Paths to mount via NFS")
-	startCmd.Flags().StringVar(&cmdline, "boot-options", defaultCmdline, "Boot commandline options")
-	startCmd.Flags().StringVar(&hyperkitPath, "hyperkit", "", "Path to hyperkit executable")
 }
 
 func startCommand(cmd *cobra.Command, args []string) error {
