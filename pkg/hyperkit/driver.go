@@ -67,6 +67,7 @@ type Driver struct {
 	Boot2DockerURL string
 	DiskSize       int
 	CPU            int
+	Hyperkit       string
 	Memory         int
 	Cmdline        string
 	NFSShares      []string
@@ -252,7 +253,7 @@ func (d *Driver) Restart() error {
 
 func (d *Driver) createHost() (*hyperkit.HyperKit, error) {
 	stateDir := d.ResolveStorePath("")
-	h, err := hyperkit.New("", d.VpnKitSock, stateDir)
+	h, err := hyperkit.New(d.Hyperkit, d.VpnKitSock, stateDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "new-ing Hyperkit")
 	}

@@ -20,6 +20,7 @@ var (
 	mountRoot    string
 	volumeMounts []string
 	cmdline      string
+	hyperkitPath string
 
 	startCmd = &cobra.Command{
 		Use:   "start",
@@ -45,6 +46,7 @@ func init() {
 	startCmd.Flags().StringVar(&mountRoot, "mount-root", "/nfsshares", "NFS mount root")
 	startCmd.Flags().StringArrayVar(&volumeMounts, "volume", []string{}, "Paths to mount via NFS")
 	startCmd.Flags().StringVar(&cmdline, "boot-options", defaultCmdline, "Boot commandline options")
+	startCmd.Flags().StringVar(&hyperkitPath, "hyperkit", "", "Path to hyperkit executable")
 }
 
 func startCommand(cmd *cobra.Command, args []string) error {
@@ -82,6 +84,7 @@ func newDriver(machineName, storePath string) (interface{}, error) {
 		},
 		Boot2DockerURL: isoURL,
 		DiskSize:       diskSize,
+		Hyperkit:       hyperkitPath,
 		Memory:         memorySize,
 		CPU:            cpuCount,
 		NFSSharesRoot:  mountRoot,
