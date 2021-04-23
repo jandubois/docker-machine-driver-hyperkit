@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ func deleteCommand(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("Powering down machine now...")
 	if err = host.Stop(); err != nil {
-		return err
+		fmt.Fprintf(os.Stderr, "Could not stop machine: %v\nWill proceed to delete configuration\n", err)
 	}
 	return api.Remove(machineName)
 }
