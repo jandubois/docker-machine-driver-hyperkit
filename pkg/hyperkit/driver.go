@@ -379,8 +379,9 @@ func (d *Driver) setupNFSMounts() error {
 
 	if len(d.NFSShares) > 0 {
 		log.Info("Setting up NFS mounts")
-		// takes some time here for ssh / nfsd to work properly
-		time.Sleep(time.Second * 30)
+		if err := drivers.WaitForSSH(d); err != nil {
+			return err
+		}
 		err = d.setupNFSShare()
 		if err != nil {
 			// TODO(tstromberg): Check that logging an and error and return it is appropriate. Seems weird.
