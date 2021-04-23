@@ -146,6 +146,19 @@ func (d *Driver) verifyRootPermissions() error {
 	return nil
 }
 
+func self(args ...string) (string, error) {
+	self, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command(self, args...)
+	log.Debugf("Running command: %s", cmd)
+	out, err := cmd.CombinedOutput()
+	output := strings.TrimSuffix(string(out), "\n")
+	log.Debugf("Output:\n%s\nError: %v", output, err)
+	return output, err
+}
+
 // Create a host using the driver's config
 func (d *Driver) Create() error {
 	if err := d.verifyRootPermissions(); err != nil {
@@ -309,7 +322,7 @@ func (d *Driver) Start() error {
 	}
 
 	log.Debugf("Using UUID %s", h.UUID)
-	mac, err := GetMACAddressFromUUID(h.UUID)
+	mac, err := self("uuid-to-mac-addr", h.UUID)
 	if err != nil {
 		return errors.Wrap(err, "getting MAC address from UUID")
 	}

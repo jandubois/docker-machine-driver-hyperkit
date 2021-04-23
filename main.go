@@ -29,6 +29,16 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "uuid-to-mac-addr" {
+		mac, err := hyperkit.GetMACAddressFromUUID(os.Args[2])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "getting MAC address from UUID: %v", err)
+			os.Exit(1)
+		}
+		fmt.Println(mac)
+		return
+	}
+
 	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
 		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
 		return
