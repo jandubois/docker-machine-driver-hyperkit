@@ -14,7 +14,7 @@ require (
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95 // indirect
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v0.0.0-20170318115843-1cf07e5970d8
-	github.com/johanneswuerbach/nfsexports v0.0.0-20200318065542-c48c3734757f
+	github.com/johanneswuerbach/nfsexports v0.0.0-20210423064528-fab278fc8156
 	github.com/mitchellh/go-ps v1.0.0
 	github.com/moby/hyperkit v0.0.0-20210108224842-2f061e447e14
 	github.com/morikuni/aec v1.0.0 // indirect
