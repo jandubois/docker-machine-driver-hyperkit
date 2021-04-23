@@ -20,6 +20,11 @@ var (
 as well as a lightweight control program to create/access/delete virtual machines
 running via hyperkit.`,
 		Version: hyperkit.GetVersion(),
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// Don't display usage information when a RunE command returns an error.
+			// Just print the error and exit.
+			cmd.SilenceUsage = true
+		},
 	}
 )
 
