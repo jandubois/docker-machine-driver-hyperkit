@@ -39,6 +39,22 @@ func main() {
 		return
 	}
 
+	if len(os.Args) > 3 && os.Args[1] == "nfs-exports" {
+		var err error
+		if os.Args[2] == "add" {
+			err = hyperkit.AddNFSExports(os.Args[3:]...)
+		} else if os.Args[2] == "remove" {
+			err = hyperkit.RemoveNFSExports(os.Args[3:]...)
+		} else {
+			err = fmt.Errorf("unknown nfs-export subcommand: %s", os.Args[2])
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "nfs-export %s failed: %v", os.Args[2], err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
 		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
 		return

@@ -549,6 +549,8 @@ func (d *Driver) setupNFSShare() error {
 	mountCommands += "[ -f /usr/local/etc/init.d/nfs-client ] && sudo /usr/local/etc/init.d/nfs-client start\\n"
 	log.Info(d.IPAddress)
 
+	exportsAddCmd := []string{"nfs-exports", "add", user.Username}
+
 	for _, share := range d.NFSShares {
 		sharePaths := strings.Split(share, ":")
 		localPath := sharePaths[0]
@@ -560,16 +562,8 @@ func (d *Driver) setupNFSShare() error {
 			log.Errorf("cannot evaluate symlinks in share path '%s': %v", sharePaths[0], err)
 			return err
 		}
-		nfsConfig := fmt.Sprintf("%s %s -alldirs -mapall=%s", localPath, d.IPAddress, user.Username)
-
 		// nfsExportIdentifier() is called with `share` and not `localPath` to keep the exports cleanup code simple
-		if _, err := nfsexports.Add("", d.nfsExportIdentifier(share), nfsConfig); err != nil {
-			if strings.Contains(err.Error(), "conflicts with existing export") {
-				log.Info("Conflicting NFS Share not setup and ignored:", err)
-				continue
-			}
-			return err
-		}
+		exportsAddCmd = append(exportsAddCmd, d.nfsExportIdentifier(share), localPath, d.IPAddress)
 
 		var mountPoint string
 		if len(sharePaths) < 2 {
@@ -582,12 +576,11 @@ func (d *Driver) setupNFSShare() error {
 		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s\\n", hostIP, localPath, mountPoint)
 	}
 
-	if err := reloadNFSDaemon(); err != nil {
+	if _, err := self(exportsAddCmd...); err != nil {
 		return err
 	}
 
 	writeScriptCmd := fmt.Sprintf("echo -e \"%s\" | sh", mountCommands)
-
 	if _, err := drivers.RunSSHCommandFromDriver(d, writeScriptCmd); err != nil {
 		return err
 	}
@@ -633,15 +626,11 @@ func (d *Driver) getPid() int {
 
 func (d *Driver) cleanupNfsExports() {
 	if len(d.NFSShares) > 0 {
+		exportsRemoveCmd := []string{"nfs-exports", "remove"}
 		for _, share := range d.NFSShares {
-			if _, err := nfsexports.Remove("", d.nfsExportIdentifier(share)); err != nil {
-				log.Errorf("failed removing nfs share (%s): %v", share, err)
-			}
+			exportsRemoveCmd = append(exportsRemoveCmd, d.nfsExportIdentifier(share))
 		}
-
-		if err := reloadNFSDaemon(); err != nil {
-			log.Errorf("failed to reload the nfs daemon: %v", err)
-		}
+		self(exportsRemoveCmd...)
 	}
 }
 
@@ -653,6 +642,44 @@ func reloadNFSDaemon() error {
 	syscall.Setreuid(uid, 0)
 	if err != nil {
 		return fmt.Errorf("Reloading nfsd failed: %s\n%s", err.Error(), out)
+	}
+	return nil
+}
+
+func AddNFSExports(args ...string) error {
+	user := args[0]
+	args = args[1:]
+
+	if len(args)%3 != 0 {
+		return fmt.Errorf("there should be 3 arguments for each export")
+	}
+
+	for len(args) > 0 {
+		ident := args[0]
+		path := args[1]
+		ip := args[2]
+		args = args[3:]
+
+		export := fmt.Sprintf("%s %s -alldirs -mapall=%s", path, ip, user)
+		if _, err := nfsexports.Add("", ident, export); err != nil {
+			if strings.Contains(err.Error(), "conflicts with existing export") {
+				fmt.Fprintf(os.Stderr, "Conflicting NFS Share not setup and ignored: %v", err)
+				continue
+			}
+			return err
+		}
+	}
+	return reloadNFSDaemon()
+}
+
+func RemoveNFSExports(args ...string) error {
+	for _, ident := range args {
+		if _, err := nfsexports.Remove("", ident); err != nil {
+			fmt.Fprintf(os.Stderr, "failed removing nfs share (%s): %v", ident, err)
+		}
+	}
+	if err := reloadNFSDaemon(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to reload the nfs daemon: %v", err)
 	}
 	return nil
 }
