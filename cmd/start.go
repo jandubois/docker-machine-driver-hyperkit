@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/machine/libmachine"
@@ -76,6 +77,13 @@ func newAPI() *libmachine.Client {
 }
 
 func newDriver(machineName, storePath string) (interface{}, error) {
+	if hyperkitPath != "" {
+		realPath, err := filepath.EvalSymlinks(hyperkitPath)
+		if err != nil {
+			Abort("Cannot evaluate symlinks in %s", hyperkitPath)
+		}
+		hyperkitPath = realPath
+	}
 	driver := hyperkit.Driver{
 		BaseDriver: &drivers.BaseDriver{
 			MachineName: machineName,

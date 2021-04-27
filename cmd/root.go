@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/machine/libmachine/log"
@@ -43,6 +44,11 @@ func onInit() {
 	}
 }
 
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+// Abort prints the formatted error message to stdout and exits with a non-zero status.
 func Abort(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	_, _ = os.Stderr.WriteString(msg)
@@ -52,6 +58,16 @@ func Abort(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func Execute() error {
-	return rootCmd.Execute()
+// DriverDir returns the absolute path to the directory containing the running executable
+// after resolving symbolic links. Calls cmd.Abort() on failure; doesn't return an error.
+func DriverDir() string {
+	executable, err := os.Executable()
+	if err != nil {
+		Abort("Cannot determine absolute path to current executable: %v", err)
+	}
+	executable, err = filepath.EvalSymlinks(executable)
+	if err != nil {
+		Abort("Cannot evaluate symlinks in path to current executable: %v", err)
+	}
+	return filepath.Dir(executable)
 }

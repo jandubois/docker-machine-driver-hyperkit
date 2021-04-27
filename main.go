@@ -68,15 +68,7 @@ func main() {
 	// Add the directory name of the current executable to the front of the PATH to load
 	// the driver from the same directory (the current executable may be a symlink to the
 	// driver, living in a different directory).
-	executable, err := os.Executable()
-	if err != nil {
-		cmd.Abort("Cannot determine absolute path to current executable: %v", err)
-	}
-	executable, err = filepath.EvalSymlinks(executable)
-	if err != nil {
-		cmd.Abort("Cannot evaluate symlinks in path to current executable: %v", err)
-	}
-	err = os.Setenv("PATH", os.ExpandEnv(fmt.Sprintf("%s:$PATH", filepath.Dir(executable))))
+	err := os.Setenv("PATH", os.ExpandEnv(fmt.Sprintf("%s:$PATH", cmd.DriverDir())))
 	if err != nil {
 		cmd.Abort("Cannot update PATH: %v", err)
 	}
