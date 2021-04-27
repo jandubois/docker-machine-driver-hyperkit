@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/docker/machine/libmachine/log"
 	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
@@ -39,6 +41,15 @@ func onInit() {
 	if debugMode {
 		log.SetDebug(true)
 	}
+}
+
+func Abort(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	_, _ = os.Stderr.WriteString(msg)
+	if !strings.HasSuffix(msg, "\n") {
+		_, _ = os.Stderr.WriteString("\n")
+	}
+	os.Exit(1)
 }
 
 func Execute() error {

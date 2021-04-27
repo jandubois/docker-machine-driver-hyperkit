@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,8 +24,8 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
-	mobyhyperkit "github.com/moby/hyperkit/go"
 	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/cmd"
+	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/cmd/priv"
 	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
 )
 
@@ -34,75 +33,31 @@ func main() {
 	if syscall.Geteuid() != 0 {
 		executable, err := os.Executable()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "cannot determina name of executable: %v", err)
-			os.Exit(1)
+			cmd.Abort("Cannot determine name of executable: %v", err)
 		}
 
 		permErr := "%s needs to run with elevated permissions. " +
 			"Please run the following command, then try again: " +
 			"sudo chown root:wheel %s && sudo chmod u+s %s"
 
-		fmt.Fprintf(os.Stderr, permErr, filepath.Base(executable), executable, executable)
-		os.Exit(1)
+		cmd.Abort(permErr, filepath.Base(executable), executable, executable)
 	}
 
-	if len(os.Args) == 3 && os.Args[1] == "uuid-to-mac-addr" {
-		mac, err := hyperkit.GetMACAddressFromUUID(os.Args[2])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "getting MAC address from UUID: %v", err)
-			os.Exit(1)
+	if len(os.Args) > 1 {
+		// All of the privileged commands will call os.Exit() and never return
+		switch os.Args[1] {
+		case "hyperkit":
+			priv.Hyperkit()
+		case "nfs-exports":
+			priv.NFSExports()
+		case "uuid-to-mac-addr":
+			priv.UUIDtoMacAddr()
 		}
-		fmt.Println(mac)
-		return
-	}
-
-	if len(os.Args) > 3 && os.Args[1] == "nfs-exports" {
-		var err error
-		if os.Args[2] == "add" {
-			err = hyperkit.AddNFSExports(os.Args[3:]...)
-		} else if os.Args[2] == "remove" {
-			err = hyperkit.RemoveNFSExports(os.Args[3:]...)
-		} else {
-			err = fmt.Errorf("unknown nfs-export subcommand: %s", os.Args[2])
-		}
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "nfs-export %s failed: %v", os.Args[2], err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if len(os.Args) == 5 && os.Args[1] == "hyperkit" {
-		var h mobyhyperkit.HyperKit
-		err := json.Unmarshal([]byte(os.Args[2]), &h)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "unmarshaling hyperkit structure failed: %v", err)
-			os.Exit(1)
-		}
-
-		var disks []mobyhyperkit.RawDisk
-		err = json.Unmarshal([]byte(os.Args[3]), &disks)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "unmarshaling hyperkit disks structure failed: %v", err)
-			os.Exit(1)
-		}
-		for _, disk := range disks {
-			h.Disks = append(h.Disks, &disk)
-		}
-
-		_, err = h.Start(os.Args[4])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to start hyperkit: %v", err)
-			os.Exit(1)
-		}
-		fmt.Fprintln(os.Stderr, "Hyperkit started successfully")
-		os.Exit(0)
 	}
 
 	// Drop root privileges before running driver mode, or commands via cobra
 	if err := syscall.Setuid(syscall.Getuid()); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot drop privileges: %v", err)
-		os.Exit(1)
+		cmd.Abort("Cannot drop privileges: %v", err)
 	}
 
 	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
@@ -115,15 +70,19 @@ func main() {
 	// driver, living in a different directory).
 	executable, err := os.Executable()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot determine absolute path to current executable: %v", err)
-		os.Exit(1)
+		cmd.Abort("Cannot determine absolute path to current executable: %v", err)
 	}
 	executable, err = filepath.EvalSymlinks(executable)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot evaluate symlinks in path to current executable: %v", err)
-		os.Exit(1)
+		cmd.Abort("Cannot evaluate symlinks in path to current executable: %v", err)
 	}
-	os.Setenv("PATH", os.ExpandEnv(fmt.Sprintf("%s:$PATH", filepath.Dir(executable))))
+	err = os.Setenv("PATH", os.ExpandEnv(fmt.Sprintf("%s:$PATH", filepath.Dir(executable))))
+	if err != nil {
+		cmd.Abort("Cannot update PATH: %v", err)
+	}
 
-	cmd.Execute()
+	err = cmd.Execute()
+	if err != nil {
+		cmd.Abort("Command failed: %v", err)
+	}
 }
