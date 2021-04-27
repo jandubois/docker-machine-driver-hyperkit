@@ -31,6 +31,21 @@ import (
 )
 
 func main() {
+	if syscall.Geteuid() != 0 {
+		executable, err := os.Executable()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cannot determina name of executable: %v", err)
+			os.Exit(1)
+		}
+
+		permErr := "%s needs to run with elevated permissions. " +
+			"Please run the following command, then try again: " +
+			"sudo chown root:wheel %s && sudo chmod u+s %s"
+
+		fmt.Fprintf(os.Stderr, permErr, filepath.Base(executable), executable, executable)
+		os.Exit(1)
+	}
+
 	if len(os.Args) == 3 && os.Args[1] == "uuid-to-mac-addr" {
 		mac, err := hyperkit.GetMACAddressFromUUID(os.Args[2])
 		if err != nil {
@@ -84,15 +99,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
-		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
-		return
-	}
-
-	// Drop root privileges before running commands via cobra
+	// Drop root privileges before running driver mode, or commands via cobra
 	if err := syscall.Setuid(syscall.Getuid()); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot drop privileges: %v", err)
 		os.Exit(1)
+	}
+
+	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {
+		plugin.RegisterDriver(hyperkit.NewDriver("", ""))
+		return
 	}
 
 	// Add the directory name of the current executable to the front of the PATH to load

@@ -48,9 +48,6 @@ const (
 	isoFilename     = "boot2docker.iso"
 	pidFileName     = "hyperkit.pid"
 	machineFileName = "hyperkit.json"
-	permErr         = "%s needs to run with elevated permissions. " +
-		"Please run the following command, then try again: " +
-		"sudo chown root:wheel %s && sudo chmod u+s %s"
 
 	defaultCPUs     = 1
 	defaultDiskSize = 20000
@@ -129,20 +126,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 // PreCreateCheck is called to enforce pre-creation steps
 func (d *Driver) PreCreateCheck() error {
-	return d.verifyRootPermissions()
-}
-
-// verifyRootPermissions is called before any step which needs root access
-func (d *Driver) verifyRootPermissions() error {
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	euid := syscall.Geteuid()
-	log.Debugf("exe=%s uid=%d", exe, euid)
-	if euid != 0 {
-		return fmt.Errorf(permErr, filepath.Base(exe), exe, exe)
-	}
 	return nil
 }
 
@@ -161,10 +144,6 @@ func self(args ...string) (string, error) {
 
 // Create a host using the driver's config
 func (d *Driver) Create() error {
-	if err := d.verifyRootPermissions(); err != nil {
-		return err
-	}
-
 	d.SSHUser = defaultSSHUser
 
 	// TODO: handle different disk types.
@@ -224,10 +203,6 @@ func pidState(pid int) (state.State, error) {
 
 // GetState returns the state that the host is in (running, stopped, etc)
 func (d *Driver) GetState() (state.State, error) {
-	if err := d.verifyRootPermissions(); err != nil {
-		return state.Error, err
-	}
-
 	pid := d.getPid()
 	log.Debugf("hyperkit pid from json: %d", pid)
 	return pidState(pid)
@@ -235,18 +210,11 @@ func (d *Driver) GetState() (state.State, error) {
 
 // Kill stops a host forcefully
 func (d *Driver) Kill() error {
-	if err := d.verifyRootPermissions(); err != nil {
-		return err
-	}
 	return d.sendSignal(syscall.SIGKILL)
 }
 
 // Remove a host
 func (d *Driver) Remove() error {
-	if err := d.verifyRootPermissions(); err != nil {
-		return err
-	}
-
 	s, err := d.GetState()
 	if err != nil || s == state.Error {
 		log.Debugf("Error checking machine status: %v, assuming it has been removed already", err)
@@ -308,10 +276,6 @@ func (d *Driver) createHost() (*hyperkit.HyperKit, error) {
 
 // Start a host
 func (d *Driver) Start() error {
-	if err := d.verifyRootPermissions(); err != nil {
-		return err
-	}
-
 	if err := d.recoverFromUncleanShutdown(); err != nil {
 		return err
 	}
@@ -473,9 +437,6 @@ func (d *Driver) recoverFromUncleanShutdown() error {
 
 // Stop a host gracefully
 func (d *Driver) Stop() error {
-	if err := d.verifyRootPermissions(); err != nil {
-		return err
-	}
 	d.cleanupNfsExports()
 	err := d.sendSignal(syscall.SIGTERM)
 	if err != nil {
