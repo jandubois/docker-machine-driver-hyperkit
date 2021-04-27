@@ -638,7 +638,7 @@ func (d *Driver) cleanupNfsExports() {
 func reloadNFSDaemon() error {
 	uid := syscall.Getuid()
 	syscall.Setuid(0)
-	out, err := exec.Command("/sbin/nfsd", "update").Output()
+	out, err := exec.Command("/sbin/nfsd", "restart").Output()
 	syscall.Setreuid(uid, 0)
 	if err != nil {
 		return fmt.Errorf("Reloading nfsd failed: %s\n%s", err.Error(), out)
