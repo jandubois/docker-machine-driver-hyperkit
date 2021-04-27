@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/docker/machine/libmachine/drivers/plugin"
 	"github.com/docker/machine/libmachine/drivers/plugin/localbinary"
+	mobyhyperkit "github.com/moby/hyperkit/go"
 	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/cmd"
 	"github.com/rancher-sandbox/docker-machine-driver-hyperkit/pkg/hyperkit"
 )
@@ -53,6 +55,33 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+
+	if len(os.Args) == 5 && os.Args[1] == "hyperkit" {
+		var h mobyhyperkit.HyperKit
+		err := json.Unmarshal([]byte(os.Args[2]), &h)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unmarshaling hyperkit structure failed: %v", err)
+			os.Exit(1)
+		}
+
+		var disks []mobyhyperkit.RawDisk
+		err = json.Unmarshal([]byte(os.Args[3]), &disks)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unmarshaling hyperkit disks structure failed: %v", err)
+			os.Exit(1)
+		}
+		for _, disk := range disks {
+			h.Disks = append(h.Disks, &disk)
+		}
+
+		_, err = h.Start(os.Args[4])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to start hyperkit: %v", err)
+			os.Exit(1)
+		}
+		fmt.Fprintln(os.Stderr, "Hyperkit started successfully")
+		os.Exit(0)
 	}
 
 	if os.Getenv(localbinary.PluginEnvKey) == localbinary.PluginEnvVal {

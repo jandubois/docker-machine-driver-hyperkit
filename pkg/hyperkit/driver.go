@@ -331,10 +331,22 @@ func (d *Driver) Start() error {
 	mac = trimMacAddress(mac)
 	log.Debugf("Generated MAC %s", mac)
 
-	log.Debugf("Starting with cmdline: %s", d.Cmdline)
-	_, err = h.Start(d.Cmdline)
+	// Marshal h.Disks separately because they will need to be unmarshaled as hyperkit.RawDisk types
+	// because hyperkit.Disk is just an interface.
+	disks, err := json.Marshal(h.Disks)
 	if err != nil {
-		return errors.Wrapf(err, "starting with cmd line: %s", d.Cmdline)
+		return errors.Wrap(err, "exporting hyperkit disks struct to JSON")
+	}
+	h.Disks = []hyperkit.Disk{}
+	hyperkit, err := json.Marshal(h)
+	if err != nil {
+		return errors.Wrap(err, "exporting hyperkit struct to JSON")
+	}
+
+	log.Debugf("Starting with cmdline: %s\nhyperkit is %s\ndisks is %s", d.Cmdline, string(hyperkit), string(disks))
+	out, err := self("hyperkit", string(hyperkit), string(disks), d.Cmdline)
+	if err != nil {
+		return errors.Wrapf(err, "failed to start hyperkit with cmd line: %s\nError: %v\n%s", d.Cmdline, err, out)
 	}
 
 	if err := d.setupIP(mac); err != nil {
