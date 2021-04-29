@@ -546,7 +546,7 @@ func (d *Driver) setupNFSShare() error {
 			mountPoint = sharePaths[1]
 		}
 		mountCommands += fmt.Sprintf("sudo mkdir -p %s\\n", mountPoint)
-		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async %s:%s %s\\n", hostIP, localPath, mountPoint)
+		mountCommands += fmt.Sprintf("sudo mount -t nfs -o vers=3,noacl,async '%s:%s' %s\\n", hostIP, localPath, mountPoint)
 	}
 
 	if _, err := self(exportsAddCmd...); err != nil {
@@ -633,7 +633,7 @@ func AddNFSExports(args ...string) error {
 		ip := args[2]
 		args = args[3:]
 
-		export := fmt.Sprintf("%s %s -alldirs -mapall=%s", path, ip, user)
+		export := fmt.Sprintf("%q %s -alldirs -mapall=%s", path, ip, user)
 		if _, err := nfsexports.Add("", ident, export); err != nil {
 			if strings.Contains(err.Error(), "conflicts with existing export") {
 				fmt.Fprintf(os.Stderr, "Conflicting NFS Share not setup and ignored: %v", err)
